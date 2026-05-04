@@ -7,11 +7,14 @@ st.set_page_config(page_title="Welfamily - 心の伴走者", page_icon="🍀", l
 st.title("Welfamily - パートナー関係の心の伴走者 🍀")
 st.write("夫婦関係やパートナーとの関係で悩んでいること、日々のちょっとした心配事から大きなお悩みまで、何でもお話しください。Welfamilyが優しく寄り添い、ワンポイントでアドバイスをお届けします。")
 
-# サイドバーでAPIキーを取得
-st.sidebar.title("設定")
-st.sidebar.write("Google GeminiのAPIキーを入力してチャットを開始してください。")
-# 【修正】入力されたAPIキーの前後に見えない空白があれば自動で削除する（.strip()）
-api_key = st.sidebar.text_input("Gemini APIキー", type="password").strip()
+# ==========================================
+# 【修正】StreamlitのSecrets（シークレット）からAPIキーを自動で取得する
+# ==========================================
+try:
+    api_key = st.secrets["GEMINI_API_KEY"]
+except KeyError:
+    st.error("システムエラー: APIキーが設定されていません。管理者に連絡してください。")
+    api_key = None
 
 # チャット履歴の初期化
 if "messages" not in st.session_state:
@@ -29,7 +32,7 @@ if prompt := st.chat_input("今の気持ちや悩みを教えてください..."
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # APIキーが設定されている場合のみAIが応答
+    # APIキーが取得できている場合のみAIが応答
     if api_key:
         genai.configure(api_key=api_key)
         
@@ -54,7 +57,6 @@ if prompt := st.chat_input("今の気持ちや悩みを教えてください..."
         5. 自身の名前を名乗る際は「Welfamily」としてください。
         """
         
-        # 【修正】最新の標準モデル gemini-1.5-flash に設定
         model = genai.GenerativeModel(
             model_name="gemini-2.5-flash",
             system_instruction=system_instruction
@@ -81,12 +83,3 @@ if prompt := st.chat_input("今の気持ちや悩みを教えてください..."
                 
             except Exception as e:
                 st.error(f"エラーが発生しました: {e}")
-                # 【修正】万が一エラーになった場合、どのモデルが使える状態かを画面に表示する
-                st.info("【システム診断】現在のAPIキーで利用可能なAIモデルを確認しています...")
-                try:
-                    available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-                    st.write(f"👉 お使いのAPIキーで利用可能なモデル: {', '.join(available_models)}")
-                except Exception as list_e:
-                    st.error("APIキー自体が無効、またはGoogle Cloud側での有効化が完了していない可能性があります。")
-    else:
-        st.warning("サイドバーからAPIキーを設定してください。")
