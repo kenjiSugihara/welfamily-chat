@@ -57,7 +57,7 @@ if prompt := st.chat_input("今の気持ちや悩みを教えてください..."
         
         # モデルの初期化
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
+            model_name="gemini-pro",
             system_instruction=system_instruction
         )
         
